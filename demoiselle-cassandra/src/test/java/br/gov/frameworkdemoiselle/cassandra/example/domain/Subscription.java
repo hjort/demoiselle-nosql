@@ -1,10 +1,13 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraColumn;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Column;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.SecondaryColumnFamily;
 
-@CassandraColumn(columnFamily = "subscribes_to", secondaryColumnFamily = "subscribers_of")
+@ColumnFamily("subscribes_to")
+@SecondaryColumnFamily("subscribers_of")
+//@CassandraColumn(columnFamily = "subscribes_to", secondaryColumnFamily = "subscribers_of")
 public class Subscription {
 
 	@Key

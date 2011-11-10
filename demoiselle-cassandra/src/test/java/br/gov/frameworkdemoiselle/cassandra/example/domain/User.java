@@ -1,16 +1,20 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Indexed;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
 
-@CassandraEntity(columnFamily = "users")
+@ColumnFamily("users")
+//@CassandraEntity(columnFamily = "users")
 public class User {
 
 	@Key
 	private String login;
 
+	@Indexed
 	private String name;
 
+	@Indexed
 	private String state;
 
 	public String getLogin() {

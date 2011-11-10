@@ -2,10 +2,17 @@ package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
 import java.util.UUID;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
-import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import org.apache.cassandra.thrift.ConsistencyLevel;
 
-@CassandraEntity(columnFamily = "blog_entries")
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Consistency;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Keyspace;
+
+@Keyspace("Keyspace1")
+@ColumnFamily("blog_entries")
+@Consistency(ConsistencyLevel.ALL)
+//@CassandraEntity(columnFamily = "blog_entries")
 public class Blog {
 
 	@Key

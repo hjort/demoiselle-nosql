@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
 
+@Deprecated
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface CassandraColumn {
