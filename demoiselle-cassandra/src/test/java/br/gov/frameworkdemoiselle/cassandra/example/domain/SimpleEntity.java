@@ -1,12 +1,12 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
 import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
-import br.gov.frameworkdemoiselle.cassandra.annotation.KeyProperty;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
 
 @CassandraEntity(columnFamily = "Standard1")
-public class Bean {
+public class SimpleEntity {
 	
-	@KeyProperty
+	@Key
 	private Long id;
 	
 	private String name;
@@ -49,7 +49,7 @@ public class Bean {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Bean other = (Bean) obj;
+		SimpleEntity other = (SimpleEntity) obj;
 		if (id == null) {
 			if (other.id != null)
 				return false;

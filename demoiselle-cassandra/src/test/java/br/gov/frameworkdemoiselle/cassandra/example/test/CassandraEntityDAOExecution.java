@@ -13,7 +13,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import br.gov.frameworkdemoiselle.cassandra.example.domain.Bean;
+import br.gov.frameworkdemoiselle.cassandra.example.domain.SimpleEntity;
 import br.gov.frameworkdemoiselle.cassandra.example.persistence.BeanDAO;
 
 import com.google.common.collect.ImmutableList;
@@ -36,13 +36,13 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 	
 	@Test
 	public void testSave() {
-		Bean bean = createBean();
+		SimpleEntity bean = createBean();
 		
 		log.debug("Saving bean: " + bean);
 		dao.save(bean);
 		assertTrue(true);
 		
-		Bean bean2 = dao.get(bean.getId().toString());
+		SimpleEntity bean2 = dao.get(bean.getId().toString());
 		assertEquals(bean, bean2);
 		
 		dao.delete(bean2);
@@ -50,7 +50,7 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 
 	@Test
 	public void testDeleteObject() {
-		Bean bean = createBean();
+		SimpleEntity bean = createBean();
 		dao.save(bean);
 		assertTrue(true);
 		
@@ -58,13 +58,13 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 		dao.delete(bean);
 		assertTrue(true);
 		
-		Bean bean2 = dao.get(bean.getId().toString());
+		SimpleEntity bean2 = dao.get(bean.getId().toString());
 		assertNull(bean2);
 	}
 
 	@Test
 	public void testDeleteString() {
-		Bean bean = createBean();
+		SimpleEntity bean = createBean();
 		dao.save(bean);
 		assertTrue(true);
 		
@@ -72,22 +72,22 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 		dao.delete(bean.getId().toString());
 		assertTrue(true);
 		
-		Bean bean2 = dao.get(bean.getId().toString());
+		SimpleEntity bean2 = dao.get(bean.getId().toString());
 		assertNull(bean2);
 	}
 
 	@Test
 	public void testGetString() {
-		Bean bean = createBean();
+		SimpleEntity bean = createBean();
 		
 		dao.save(bean);
 		assertTrue(true);
 		
-		Bean bean2 = dao.get(bean.getId().toString());
+		SimpleEntity bean2 = dao.get(bean.getId().toString());
 		assertEquals(bean, bean2);
 		dao.delete(bean2);
 		
-		Bean bean3 = dao.get("invalid-id");
+		SimpleEntity bean3 = dao.get("invalid-id");
 		assertNull(bean3);
 	}
 
@@ -104,7 +104,7 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 		};
 		
 		log.debug("Retrieving iterable list: " + keys);
-		final List<Bean> list = dao.get(ite);
+		final List<SimpleEntity> list = dao.get(ite);
 		log.debug(list);
 		assertEquals(2, list.size());
 		assertTrue(list.contains(createBean(100001l)));
@@ -120,7 +120,7 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 
 		final List<String> keys = ImmutableList.of("100001", "100005", "100010");
 		log.debug("Retrieving list: " + keys);
-		final List<Bean> list = dao.get(keys);
+		final List<SimpleEntity> list = dao.get(keys);
 		log.debug(list);
 		assertEquals(2, list.size());
 		assertTrue(list.contains(createBean(100001l)));
@@ -135,7 +135,7 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 		saveBeans();
 		
 		log.debug("Retrieving ranges:");
-		List<Bean> list = dao.getRange("100002", "100004", 100);
+		List<SimpleEntity> list = dao.getRange("100002", "100004", 100);
 		log.debug(list);
 		assertEquals(3, list.size());
 		assertTrue(list.contains(createBean(100003l)));
@@ -153,13 +153,13 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 		removeBeans();
 	}
 
-	private Bean createBean() {
+	private SimpleEntity createBean() {
 		long id = (long) (Math.random() * 1E4);
 		return createBean(id);
 	}
 	
-	private Bean createBean(final long id) {
-		Bean bean = new Bean();
+	private SimpleEntity createBean(final long id) {
+		SimpleEntity bean = new SimpleEntity();
 		bean.setId(id);
 		bean.setName("Bean Named " + id);
 		bean.setActive(true);
@@ -169,7 +169,7 @@ public class CassandraEntityDAOExecution extends EmbeddedServerExecution {
 	private void saveBeans() {
 		log.debug("Saving beans:");
 		for (int i = 1; i < 10; i++) {
-			Bean bean = createBean((long) (1E5 + i));
+			SimpleEntity bean = createBean((long) (1E5 + i));
 			log.debug(bean);
 			dao.save(bean);
 		}

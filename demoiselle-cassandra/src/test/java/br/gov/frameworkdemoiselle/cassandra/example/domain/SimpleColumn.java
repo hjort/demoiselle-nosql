@@ -1,20 +1,20 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
 import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraColumn;
-import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnProperty;
-import br.gov.frameworkdemoiselle.cassandra.annotation.KeyProperty;
-import br.gov.frameworkdemoiselle.cassandra.annotation.ValueProperty;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Column;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Value;
 
 @CassandraColumn(columnFamily = "Standard1", secondaryColumnFamily = "Standard2")
-public class Column {
+public class SimpleColumn {
 
-	@KeyProperty
+	@Key
 	private Long id;
 	
-	@ColumnProperty
+	@Column
 	private String column;
 	
-	@ValueProperty
+	@Value
 	private String value;
 
 	public Long getId() {
@@ -63,7 +63,7 @@ public class Column {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Column other = (Column) obj;
+		SimpleColumn other = (SimpleColumn) obj;
 		if (column == null) {
 			if (other.column != null)
 				return false;

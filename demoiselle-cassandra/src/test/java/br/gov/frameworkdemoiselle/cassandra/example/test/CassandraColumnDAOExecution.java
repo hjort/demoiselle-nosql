@@ -11,7 +11,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import br.gov.frameworkdemoiselle.cassandra.example.domain.Column;
+import br.gov.frameworkdemoiselle.cassandra.example.domain.SimpleColumn;
 import br.gov.frameworkdemoiselle.cassandra.example.persistence.ColumnDAO;
 
 public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
@@ -32,7 +32,7 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 	
 	@Test
 	public void testSave() {
-		Column col = createColumn();
+		SimpleColumn col = createColumn();
 		
 		log.debug("Saving column: " + col);
 		dao.save(col);
@@ -49,7 +49,7 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 
 	@Test
 	public void testDelete() {
-		Column col = createColumn();
+		SimpleColumn col = createColumn();
 		dao.save(col);
 		assertTrue(true);
 
@@ -116,11 +116,11 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 		saveColumns();
 		
 		log.debug("Retrieving columns by primary key:");
-		List<Column> cols = dao.getByPrimaryKey("4");
+		List<SimpleColumn> cols = dao.getByPrimaryKey("4");
 		log.debug(cols);
 		assertFalse(cols.isEmpty());
 		assertEquals(3, cols.size());
-		Column first = cols.get(0);
+		SimpleColumn first = cols.get(0);
 		assertEquals(new Long(4l), first.getId());
 		assertEquals("ca", first.getColumn());
 		assertEquals("4 ca", first.getValue());
@@ -133,11 +133,11 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 		saveColumns();
 		
 		log.debug("Retrieving columns by secondary key:");
-		List<Column> cols = dao.getBySecondaryKey("ca");
+		List<SimpleColumn> cols = dao.getBySecondaryKey("ca");
 		log.debug(cols);
 		assertFalse(cols.isEmpty());
 		assertEquals(9, cols.size());
-		Column first = cols.get(0);
+		SimpleColumn first = cols.get(0);
 		assertEquals(new Long(1l), first.getId());
 		assertEquals("ca", first.getColumn());
 		assertEquals("1 ca", first.getValue());
@@ -145,15 +145,15 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 		removeColumns();
 	}
 
-	private Column createColumn(int key, String name) {
-		Column col = new Column();
+	private SimpleColumn createColumn(int key, String name) {
+		SimpleColumn col = new SimpleColumn();
 		col.setId((long) key);
 		col.setColumn(name);
 		col.setValue(key + " " + name);
 		return col;
 	}
 
-	private Column createColumn() {
+	private SimpleColumn createColumn() {
 		int key = (int) (Math.random() * 1E3);
 		String name = "name";
 		return createColumn(key, name);
@@ -163,7 +163,7 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 		log.debug("Saving columns:");
 		for (int i = 1; i < 10; i++) {
 			for (char c = 'a'; c < 'd'; c++) {
-				Column column = createColumn(i, "c" + c);
+				SimpleColumn column = createColumn(i, "c" + c);
 				log.debug(column);
 				dao.save(column);
 			}
@@ -173,7 +173,7 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 	private void removeColumns() {
 		for (int i = 1; i < 10; i++) {
 			for (char c = 'a'; c < 'd'; c++) {
-				Column column = createColumn(i, "c" + c);
+				SimpleColumn column = createColumn(i, "c" + c);
 				dao.delete(column);
 			}
 		}
