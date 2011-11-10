@@ -21,7 +21,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 
 import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
-import br.gov.frameworkdemoiselle.cassandra.annotation.KeyProperty;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
 import br.gov.frameworkdemoiselle.cassandra.exception.CassandraException;
 
 import com.google.common.base.Functions;
@@ -66,7 +66,7 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
         fields = new HashMap<String, Field>();
         for (Field field : clz.getDeclaredFields()) {
         	fields.put(field.getName(), field);
-        	if (field.isAnnotationPresent(KeyProperty.class)) {
+        	if (field.isAnnotationPresent(Key.class)) {
         		keyField = field;
         	}
 		}

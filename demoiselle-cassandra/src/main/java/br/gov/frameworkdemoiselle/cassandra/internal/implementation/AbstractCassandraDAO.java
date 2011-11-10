@@ -15,11 +15,11 @@ import me.prettyprint.cassandra.dao.Command;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnProperty;
-import br.gov.frameworkdemoiselle.cassandra.annotation.KeyProperty;
-import br.gov.frameworkdemoiselle.cassandra.annotation.SuperColumnProperty;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Column;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.SuperColumn;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Transient;
-import br.gov.frameworkdemoiselle.cassandra.annotation.ValueProperty;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Value;
 import br.gov.frameworkdemoiselle.cassandra.exception.CassandraException;
 import br.gov.frameworkdemoiselle.cassandra.internal.configuration.CassandraConfig;
 import br.gov.frameworkdemoiselle.cassandra.internal.mapping.BooleanTypeMapping;
@@ -117,15 +117,15 @@ public abstract class AbstractCassandraDAO<T> {
 	}
 	
 	protected boolean isKeyProperty(final PropertyDescriptor d) {
-		return safeIsAnnotationPresent(d, KeyProperty.class);
+		return safeIsAnnotationPresent(d, Key.class);
 	}
 
     protected boolean isColumnProperty(final PropertyDescriptor d) {
-		return safeIsAnnotationPresent(d, ColumnProperty.class);
+		return safeIsAnnotationPresent(d, Column.class);
 	}
 
     protected boolean isValueProperty(final PropertyDescriptor d) {
-		return safeIsAnnotationPresent(d, ValueProperty.class);
+		return safeIsAnnotationPresent(d, Value.class);
 	}
 
 	protected boolean isTransient(final PropertyDescriptor d) {
@@ -133,7 +133,7 @@ public abstract class AbstractCassandraDAO<T> {
 	}
 
 	protected boolean isSuperColumnProperty(final PropertyDescriptor descriptor) {
-		return safeIsAnnotationPresent(descriptor, SuperColumnProperty.class);
+		return safeIsAnnotationPresent(descriptor, SuperColumn.class);
 	}
 
 	private boolean safeIsAnnotationPresent(final PropertyDescriptor d, final Class<? extends Annotation> annotation) {
