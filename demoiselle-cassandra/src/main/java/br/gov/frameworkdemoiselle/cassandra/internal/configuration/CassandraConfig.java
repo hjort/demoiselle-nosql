@@ -4,10 +4,8 @@ import org.apache.cassandra.thrift.ConsistencyLevel;
 
 import br.gov.frameworkdemoiselle.configuration.Configuration;
 
-@Configuration(prefix = "demoiselle.cassandra")
+@Configuration(prefix = "frameworkdemoiselle.cassandra")
 public class CassandraConfig {
-
-	private static final long serialVersionUID = 1L;
 
 	private String[] serverNodes;
 
