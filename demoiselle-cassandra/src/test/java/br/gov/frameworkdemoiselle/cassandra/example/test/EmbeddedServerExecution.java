@@ -30,43 +30,55 @@
  * para maiores detalhes.
  * 
  * Você deve ter recebido uma cópia da GNU LGPL versão 3, sob o título
- * "LICENCA.txt", junto com esse programa. Se não, acesse < http://www.gnu.org/licenses/ >
+ * "LICENCA.txt", junto com esse programa. Se não, acesse <http://www.gnu.org/licenses/>
  * ou escreva para a Fundação do Software Livre (FSF) Inc.,
  * 51 Franklin St, Fifth Floor, Boston, MA 02111-1301, USA.
  */
-package br.gov.frameworkdemoiselle.cassandra.sample;
+package br.gov.frameworkdemoiselle.cassandra.example.test;
 
+import java.io.IOException;
+
+import me.prettyprint.cassandra.testutils.EmbeddedServerHelper;
+
+import org.apache.thrift.transport.TTransportException;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 /**
- * Classe de exmplo seus objetivos são:
- * <ul>
- * 	<li>Exemplificar o uso de Javadocs;
- * 	<li>Disponibilizar um método para ser testado;
- * </ul>
- * <p>
- * Abaixo algumas das principais tags utilizadas para documentação de classe.
- * <p>
+ * Base class for test cases that need access to EmbeddedServerHelper
  * 
- * @author      Autor da classe
- * @version     %I%, %G%
- * @since       1.0
+ * @author Nate McCall (nate@vervewireless.com)
  */
-public class App{
-	
-	 /** 
-     * Exemplo de documentação de métodos.
-     * <p>
-     * Explique qual o objetivo do método e o que pode ocorrer em sua execução.
-     * <p>
-     *
-     * @param a			explique quem é a;
-     * @param b         explique quem é b;
-     * @return          a + b;
-     * @since           1.0
-     */
-	public int soma(int a, int b) {
-		return a+b;
+public abstract class EmbeddedServerExecution {
+
+	private static EmbeddedServerHelper embedded;
+
+//	protected CassandraClientPool pools;
+//	protected CassandraHostConfigurator cassandraHostConfigurator;
+
+	/**
+	 * Set embedded cassandra up and spawn it in a new thread.
+	 * 
+	 * @throws TTransportException
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	@BeforeClass
+	public static void setup() throws TTransportException, IOException, InterruptedException {
+		embedded = new EmbeddedServerHelper();
+		embedded.setup();
 	}
-	
-    
+
+	@AfterClass
+	public static void teardown() throws IOException {
+		embedded.teardown();
+		embedded = null;
+	}
+
+	/*
+	protected void setupClient() {
+		cassandraHostConfigurator = new CassandraHostConfigurator("127.0.0.1:9170");
+		pools = CassandraClientPoolFactory.INSTANCE.createNew(cassandraHostConfigurator);
+	}*/
+
 }
