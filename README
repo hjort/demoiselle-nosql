@@ -1,0 +1,8 @@
+Demoiselle NoSQL Persistence Components
+=======================================
+
+* Demoiselle Cassandra
+  Apache Cassandra: column-oriented database
+
+* Demoiselle Mongo
+  MongoDB: document-oriented database
