@@ -7,7 +7,6 @@ import br.gov.frameworkdemoiselle.cassandra.annotation.SecondaryColumnFamily;
 
 @ColumnFamily("subscribes_to")
 @SecondaryColumnFamily("subscribers_of")
-//@CassandraColumn(columnFamily = "subscribes_to", secondaryColumnFamily = "subscribers_of")
 public class Subscription {
 
 	@Key

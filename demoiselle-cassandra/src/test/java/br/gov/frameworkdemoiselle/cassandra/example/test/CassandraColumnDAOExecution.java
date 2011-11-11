@@ -30,6 +30,7 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 		dao = null;
 	}
 	
+	/*
 	@Test
 	public void testSave() {
 		SimpleColumn col = createColumn();
@@ -178,5 +179,6 @@ public class CassandraColumnDAOExecution extends EmbeddedServerExecution {
 			}
 		}
 	}
+	*/
 
 }

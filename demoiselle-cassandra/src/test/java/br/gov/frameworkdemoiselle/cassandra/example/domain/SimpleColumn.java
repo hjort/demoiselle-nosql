@@ -1,11 +1,13 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraColumn;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Column;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.SecondaryColumnFamily;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Value;
 
-@CassandraColumn(columnFamily = "Standard1", secondaryColumnFamily = "Standard2")
+@ColumnFamily("Standard1")
+@SecondaryColumnFamily("Standard2")
 public class SimpleColumn {
 
 	@Key

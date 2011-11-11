@@ -38,7 +38,7 @@ package br.gov.frameworkdemoiselle.cassandra.example.test;
 
 import java.io.IOException;
 
-import me.prettyprint.cassandra.testutils.EmbeddedServerHelper;
+//import me.prettyprint.cassandra.testutils.EmbeddedServerHelper;
 
 import org.apache.thrift.transport.TTransportException;
 import org.junit.AfterClass;
@@ -51,7 +51,7 @@ import org.junit.BeforeClass;
  */
 public abstract class EmbeddedServerExecution {
 
-	private static EmbeddedServerHelper embedded;
+//	private static EmbeddedServerHelper embedded;
 
 //	protected CassandraClientPool pools;
 //	protected CassandraHostConfigurator cassandraHostConfigurator;
@@ -63,6 +63,7 @@ public abstract class EmbeddedServerExecution {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
+	/*
 	@BeforeClass
 	public static void setup() throws TTransportException, IOException, InterruptedException {
 		embedded = new EmbeddedServerHelper();
@@ -74,6 +75,7 @@ public abstract class EmbeddedServerExecution {
 		embedded.teardown();
 		embedded = null;
 	}
+	*/
 
 	/*
 	protected void setupClient() {

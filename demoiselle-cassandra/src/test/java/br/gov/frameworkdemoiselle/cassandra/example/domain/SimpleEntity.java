@@ -1,9 +1,9 @@
 package br.gov.frameworkdemoiselle.cassandra.example.domain;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
 
-@CassandraEntity(columnFamily = "Standard1")
+@ColumnFamily("Standard1")
 public class SimpleEntity {
 	
 	@Key
