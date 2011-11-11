@@ -78,11 +78,11 @@
 		<!-- Hector Cassandra API -->
 		<dependency>
 			<groupId>me.prettyprint</groupId>
-			<artifactId>hector</artifactId>
-			<version>0.6.0-19</version>
+			<artifactId>hector-core</artifactId>
+<!--			<version>0.6.0-19</version>-->
 <!--			<version>0.7.0-31</version>-->
 <!--			<version>0.8.0-3</version>-->
-<!--			<version>1.0-1</version>-->
+			<version>1.0-1</version>
 		</dependency>
 	
 		<!-- Major Libraries -->
@@ -103,7 +103,42 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>br.gov.frameworkdemoiselle.component</groupId>
+			<artifactId>demoiselle-junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>1.5.10</version>
+		</dependency>
+  		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>1.2.14</version>
+		</dependency>
+		<dependency>
+			<groupId>org.easymock</groupId>
+			<artifactId>easymock</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-module-junit4</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-easymock</artifactId>
+			<scope>test</scope>
+		</dependency>
+		 -->
+		 
 	</dependencies>
 
 	<build>
