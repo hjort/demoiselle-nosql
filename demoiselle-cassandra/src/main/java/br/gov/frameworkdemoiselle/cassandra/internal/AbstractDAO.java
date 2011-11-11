@@ -1,6 +1,6 @@
-package br.gov.frameworkdemoiselle.cassandra.internal.implementation;
+package br.gov.frameworkdemoiselle.cassandra.internal;
 
-public interface CassandraDAO<T> {
+public abstract interface AbstractDAO<T> {
 
 	/**
 	 * Saves the given object into the data store.

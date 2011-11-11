@@ -1,61 +1,78 @@
-package br.gov.frameworkdemoiselle.cassandra.internal.implementation;
+package br.gov.frameworkdemoiselle.cassandra.persistence;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import me.prettyprint.cassandra.dao.Command;
-import me.prettyprint.cassandra.service.KeyspaceService;
-import me.prettyprint.hector.api.exceptions.HectorException;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
-import org.apache.cassandra.thrift.Column;
-import org.apache.cassandra.thrift.ColumnParent;
-import org.apache.cassandra.thrift.ColumnPath;
-import org.apache.cassandra.thrift.SlicePredicate;
-import org.apache.cassandra.thrift.SliceRange;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraColumn;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Consistency;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Keyspace;
+import br.gov.frameworkdemoiselle.cassandra.annotation.SecondaryColumnFamily;
 import br.gov.frameworkdemoiselle.cassandra.exception.CassandraException;
+import br.gov.frameworkdemoiselle.cassandra.internal.ColumnDAO;
+import br.gov.frameworkdemoiselle.cassandra.internal.implementation.AbstractCassandraDAO;
+import br.gov.frameworkdemoiselle.cassandra.internal.implementation.TypeConverter;
 
-public abstract class CassandraColumnDAO<T> extends AbstractCassandraDAO<T> {
+public abstract class CassandraColumnDAO<T> extends AbstractCassandraDAO<T> implements ColumnDAO<T> {
 
-	private static Logger log = Logger.getLogger(CassandraColumnDAO.class);
+	@Inject
+	private Logger logger;
 
-	private final String secondaryColumnFamily;
+	private String secondaryColumnFamily;
 
 	private PropertyDescriptor columnDescriptor;
 	private PropertyDescriptor valueDescriptor;
 
-	public CassandraColumnDAO() {
+	protected CassandraColumnDAO() {
+	}
+	
+	@PostConstruct
+	protected void init() {
 		
-        log.debug("Instantiating CassandraColumnDAO with " + clz.getSimpleName());
+		final Class<T> clz = getClazz();
+		
+        logger.debug("Instantiating CassandraColumnDAO<" + clz.getSimpleName() + ">");
 
-		if (!clz.isAnnotationPresent(CassandraColumn.class)) {
-			throw new IllegalArgumentException(
-					"Trying to create a CassandraColumnDAO for a class that is not mapped with @CassandraColumn");
+        if (!clz.isAnnotationPresent(ColumnFamily.class)) {
+            throw new CassandraException(
+            		"Target class must be annotated with @ColumnFamily: " + clz.getName());
+        }
+
+		final Keyspace keyspace = clz.getAnnotation(Keyspace.class);
+		if (!"".equals(keyspace.value())) {
+			this.keyspaceName = keyspace.value();
+		} else if (this.keyspaceName == null) {
+			throw new CassandraException("Could not find keyspace for "
+					+ clz.getName() + ", annotate it with @Keyspace or define in the properties file");
 		}
 
-		final CassandraColumn annotation = clz.getAnnotation(CassandraColumn.class);
+        final ColumnFamily columnFamily = clz.getAnnotation(ColumnFamily.class);
+		if (!"".equals(columnFamily.value())) {
+			this.columnFamilyName = columnFamily.value();
+		} else if (this.columnFamilyName == null) {
+			this.columnFamilyName = clz.getSimpleName();
+		}
+		
+        logger.trace("Using column family name [" + this.keyspaceName + "][" + this.columnFamilyName + "]");
 		
 		this.typeConverter = new TypeConverter(typeMappings, serializeUnknownClasses);
 
-		if (!"".equals(annotation.keyspace())) {
-			this.keyspace = annotation.keyspace();
-		} else if (this.keyspace == null) {
-			throw new CassandraException("Could not find keyspace for "
-					+ clz.getName() + ", annotate it on @CassandraColumn or define in the properties file");
-		}
-		
-		this.columnFamily = annotation.columnFamily();
-		this.secondaryColumnFamily = annotation.secondaryColumnFamily();
+        final SecondaryColumnFamily secColumnFamily = clz.getAnnotation(SecondaryColumnFamily.class);
+		if (!"".equals(secColumnFamily.value())) {
+			this.secondaryColumnFamily = secColumnFamily.value();
+		}		
 
-		if (annotation.consistency() != null) {
-			consistencyLevel = annotation.consistency();
-		}
+		final Consistency consistency = clz.getAnnotation(Consistency.class);
+        if (consistency.value() != null) {
+        	consistencyLevel = consistency.value();
+        }
 
 		this.fields = new HashMap<String, Field>();
 		for (Field field : clz.getDeclaredFields()) {
@@ -74,16 +91,59 @@ public abstract class CassandraColumnDAO<T> extends AbstractCassandraDAO<T> {
 		}
 
 		if (keyDescriptor == null) {
-			throw new CassandraException("Could not find key of class "
-					+ clz.getName() + ", did you annotate with @KeyProperty");
+			throw new CassandraException("Could not find key for class "
+					+ clz.getName() + ", annotate a property with @Key");
 		}
 
 		if (columnDescriptor == null) {
-			throw new CassandraException("Could not find column of class "
-					+ clz.getName() + ", did you annotate with @ColumnProperty");
+			throw new CassandraException("Could not find column for class "
+					+ clz.getName() + ", annotate a property @Column");
 		}
 	}
 
+	@Override
+	public void save(T object) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void delete(T object) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public List<String> getColumns(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<String> getColumnsBySecondary(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<String> getValues(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> getByPrimaryKey(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> getBySecondaryKey(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/*
 	public void save(final T object) {
 		try {
 			final String keyName = keyDescriptor.getName();
@@ -381,5 +441,6 @@ public abstract class CassandraColumnDAO<T> extends AbstractCassandraDAO<T> {
 		}
 		return result;
 	}
+	*/
 
 }

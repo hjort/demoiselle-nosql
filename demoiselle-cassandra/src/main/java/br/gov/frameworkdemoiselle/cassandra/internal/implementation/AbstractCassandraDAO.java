@@ -9,9 +9,10 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import me.prettyprint.cassandra.dao.Command;
+//import me.prettyprint.cassandra.dao.Command;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
 
@@ -34,6 +35,7 @@ import br.gov.frameworkdemoiselle.cassandra.internal.mapping.StringTypeMapping;
 import br.gov.frameworkdemoiselle.cassandra.internal.mapping.TypeMapping;
 import br.gov.frameworkdemoiselle.cassandra.internal.mapping.URITypeMapping;
 import br.gov.frameworkdemoiselle.cassandra.internal.mapping.UUIDTypeMapping;
+import br.gov.frameworkdemoiselle.util.Reflections;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -41,9 +43,9 @@ import com.google.common.collect.ImmutableMap;
 public abstract class AbstractCassandraDAO<T> {
 
 	@Inject
-	private CassandraConfig config;
+	protected CassandraConfig config;
 	
-	protected Class<T> clz;
+	private Class<T> clz;
 	
 	protected boolean serializeUnknownClasses;
 	protected ImmutableMap<Class<?>, TypeMapping<?>> typeMappings;
@@ -52,8 +54,8 @@ public abstract class AbstractCassandraDAO<T> {
     private int port;
 	private String[] nodes;
 
-    protected String keyspace;
-    protected String columnFamily;
+    protected String keyspaceName;
+    protected String columnFamilyName;
 
     protected ConsistencyLevel consistencyLevel;
 
@@ -92,22 +94,23 @@ public abstract class AbstractCassandraDAO<T> {
     	);
     */
 
-	@SuppressWarnings("unchecked")
+//	@SuppressWarnings("unchecked")
 	public AbstractCassandraDAO() {
 		
-        clz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
-        
-        // TODO: read additional type mappings from somewhere (i.e., type-mappings.properties) 
-        typeMappings = ImmutableMap.<Class<?>, TypeMapping<?>>builder().putAll(DEFAULT_TYPES)./*putAll(mappings).*/build();
-
-        initialize();
+//        clz = (Class<T>) ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments()[0];
+		
+//        initialize();
 	}
 
-	private void initialize() {
+	@PostConstruct
+	protected void initialize() {
+		
+        // TODO: read additional type mappings from somewhere (i.e., type-mappings.properties) 
+        typeMappings = ImmutableMap.<Class<?>, TypeMapping<?>>builder().putAll(DEFAULT_TYPES)./*putAll(mappings).*/build();
 		
 		// read settings from properties file
 		nodes = config.getServerNodes();
-		keyspace = config.getDefaultKeyspace();
+		keyspaceName = config.getDefaultKeyspace();
 		consistencyLevel = config.getDefaultConsistency();
 		serializeUnknownClasses = config.isSerializeUnknown();
 		
@@ -154,7 +157,7 @@ public abstract class AbstractCassandraDAO<T> {
 		return (d.getReadMethod() != null && d.getWriteMethod() != null);
 	}
 
-	protected <V> V execute(final Command<V> command) throws Exception {
+	/*protected <V> V execute(final Command<V> command) throws Exception {
     	if (hostname != null) {
     		return command.execute(hostname, port, keyspace);
     	} else if (nodes != null) {
@@ -162,11 +165,20 @@ public abstract class AbstractCassandraDAO<T> {
     	} else {
     		throw new CassandraException("One of these must be set: hostname and port or an array of nodes.");
     	}
-    }
+    }*/
 
 	// TODO: implement this in the future, by using a pool of clients
 //	protected <T> T execute(final CassandraCommand<T> command) throws CassandraException {
 //		return command.execute(keyspace, consistencyLevel);
 //	}
 
+	protected Class<T> getClazz() {
+
+		if (this.clz == null) {
+			this.clz = Reflections.getGenericTypeArgument(this.getClass(), 0);
+		}
+
+		return this.clz;
+	}
+	
 }

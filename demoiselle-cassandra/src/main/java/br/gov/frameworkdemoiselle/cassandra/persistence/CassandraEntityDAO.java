@@ -1,4 +1,6 @@
-package br.gov.frameworkdemoiselle.cassandra.internal.implementation;
+package br.gov.frameworkdemoiselle.cassandra.persistence;
+
+import static me.prettyprint.hector.api.factory.HFactory.getOrCreateCluster;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
@@ -8,21 +10,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import me.prettyprint.cassandra.dao.Command;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+//import me.prettyprint.cassandra.dao.Command;
+import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.KeyspaceService;
+import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.ConsistencyLevelPolicy;
 import me.prettyprint.hector.api.exceptions.HectorException;
+import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hector.api.mutation.Mutator;
 
 import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ColumnParent;
 import org.apache.cassandra.thrift.ColumnPath;
+import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.cassandra.thrift.SlicePredicate;
 import org.apache.cassandra.thrift.SuperColumn;
 import org.apache.commons.beanutils.PropertyUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
-import br.gov.frameworkdemoiselle.cassandra.annotation.CassandraEntity;
+import br.gov.frameworkdemoiselle.cassandra.annotation.ColumnFamily;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Consistency;
 import br.gov.frameworkdemoiselle.cassandra.annotation.Key;
+import br.gov.frameworkdemoiselle.cassandra.annotation.Keyspace;
 import br.gov.frameworkdemoiselle.cassandra.exception.CassandraException;
+import br.gov.frameworkdemoiselle.cassandra.internal.EntityDAO;
+import br.gov.frameworkdemoiselle.cassandra.internal.implementation.AbstractCassandraDAO;
+import br.gov.frameworkdemoiselle.cassandra.internal.implementation.MarshalledObject;
+import br.gov.frameworkdemoiselle.cassandra.internal.implementation.TypeConverter;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
@@ -32,37 +49,69 @@ import com.google.common.collect.ImmutableSet.Builder;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
+public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> implements EntityDAO<T> {
 
-	private static Logger log = Logger.getLogger(CassandraEntityDAO.class);
+	@Inject
+	private Logger logger;
+
+	private final StringSerializer serializer = StringSerializer.get();
+	private me.prettyprint.hector.api.Keyspace keyspace;	
 	
 	protected CassandraEntityDAO() {
+	}
+	
+	@PostConstruct
+	protected void init() {
 		
-        log.debug("Instantiating CassandraEntityDAO with " + clz.getSimpleName());
+		final Class<T> clz = getClazz();
+		
+        logger.debug("Instantiating CassandraEntityDAO<" + clz.getSimpleName() + ">");
         
-        if (!clz.isAnnotationPresent(CassandraEntity.class)) {
-            throw new IllegalArgumentException(
-            		"Trying to create a CassandraEntityDAO for a class that is not mapped with @CassandraEntity");
+        if (!clz.isAnnotationPresent(ColumnFamily.class)) {
+            throw new CassandraException(
+            		"Target class must be annotated with @ColumnFamily: " + clz.getName());
         }
-        
-        final CassandraEntity annotation = clz.getAnnotation(CassandraEntity.class);
 
+		final Keyspace keyspaceAnnotation = clz.getAnnotation(Keyspace.class);
+		if (keyspaceAnnotation != null && !"".equals(keyspaceAnnotation.value())) {
+			this.keyspaceName = keyspaceAnnotation.value();
+		} else {
+			this.keyspaceName = config.getDefaultKeyspace();
+		}
+		if (this.keyspaceName == null) {
+			throw new CassandraException("Could not find keyspace for "
+					+ clz.getName() + ", annotate it with @Keyspace or define in the properties file");
+		}
+
+        final ColumnFamily columnFamilyAnnotation = clz.getAnnotation(ColumnFamily.class);
+		if (!"".equals(columnFamilyAnnotation.value())) {
+			this.columnFamilyName = columnFamilyAnnotation.value();
+		} else if (this.columnFamilyName == null) {
+			this.columnFamilyName = clz.getSimpleName();
+		}
+        
+		final Consistency consistencyAnnotation = clz.getAnnotation(Consistency.class);
+        if (consistencyAnnotation != null) {
+        	this.consistencyLevel = consistencyAnnotation.value();
+        } else {
+        	this.consistencyLevel = config.getDefaultConsistency();
+        }
+        if (this.consistencyLevel == null) {
+        	this.consistencyLevel = ConsistencyLevel.QUORUM;
+        }
+
+        logger.trace("Using column family name [" + this.keyspaceName + "][" + this.columnFamilyName + "]");
+        
+        // TODO: implementar pool de conexões com múltiplos servidores
+        
+        Cluster cluster = HFactory.getOrCreateCluster("MyCluster", "localhost:9160");
+        this.keyspace = HFactory.createKeyspace(keyspaceName, cluster);
+        
+        // ...
+        
 		typeConverter = new TypeConverter(typeMappings, serializeUnknownClasses);
 		propertyDescriptors = PropertyUtils.getPropertyDescriptors(clz);
 
-		if (!"".equals(annotation.keyspace())) {
-			this.keyspace = annotation.keyspace();
-		} else if (this.keyspace == null) {
-			throw new CassandraException("Could not find keyspace for "
-					+ clz.getName() + ", annotate it on @CassandraEntity or define in the properties file");
-		}
-
-        columnFamily = annotation.columnFamily();
-
-        if (annotation.consistency() != null) {
-        	consistencyLevel = annotation.consistency();
-        }
-        
         fields = new HashMap<String, Field>();
         for (Field field : clz.getDeclaredFields()) {
         	fields.put(field.getName(), field);
@@ -84,11 +133,54 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
 		columnNames = ImmutableList.copyOf(setBuilder.build());
 
 		if (keyField == null && keyDescriptor == null) {
-			throw new CassandraException("Could not find key of class "
-					+ clz.getName() + ", did you annotate with @KeyProperty");
+			throw new CassandraException("Could not find key for class "
+					+ clz.getName() + ", annotate a property with @Key");
 		}
 	}
 
+	@Override
+	public void delete(T object) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void delete(String key) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public T get(String key) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> get(Iterable<String> keys) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> get(List<String> keys) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> getRange(String keyStart, String keyEnd, int amount) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<T> get(String key, Iterable<String> columns) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
 	public void save(final T object) {
 
         final MarshalledObject marshalledObject = MarshalledObject.create();
@@ -132,22 +224,23 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
 		final List<Column> columnList = Lists.newLinkedList();
 		final long timestamp = System.currentTimeMillis() * 1000;
 
-		for (final Map.Entry<String, byte[]> property : marshalledObject.getEntries()) {
-			columnList.add(toColumn(property, timestamp));
-		}
+//		for (final Map.Entry<String, byte[]> property : marshalledObject.getEntries()) {
+//			columnList.add(toColumn(property, timestamp));
+//		}
 
-		final Map<String, List<Column>> columnMap;
-		final Map<String, List<SuperColumn>> superColumnMap;
+//		final Map<String, List<Column>> columnMap;
+//		final Map<String, List<SuperColumn>> superColumnMap;
 
-		if (marshalledObject.isSuperColumnPresent()) {
-			final SuperColumn superColumn = new SuperColumn(marshalledObject.getSuperColumn(), columnList);
-			superColumnMap = ImmutableMap.<String, List<SuperColumn>> of(columnFamily, ImmutableList.of(superColumn));
-			columnMap = null;
-		} else {
-			columnMap = ImmutableMap.<String, List<Column>> of(columnFamily, columnList);
-			superColumnMap = null;
-		}
+//		if (marshalledObject.isSuperColumnPresent()) {
+//			final SuperColumn superColumn = new SuperColumn(marshalledObject.getSuperColumn(), columnList);
+//			superColumnMap = ImmutableMap.<String, List<SuperColumn>> of(columnFamily, ImmutableList.of(superColumn));
+//			columnMap = null;
+//		} else {
+//			columnMap = ImmutableMap.<String, List<Column>> of(columnFamilyName, columnList);
+//			superColumnMap = null;
+//		}
 
+		/*
 		try {
 			execute(new Command<Void>() {
 
@@ -161,12 +254,26 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
 		} catch (final Exception e) {
 			throw new CassandraException(e);
 		}
+		*/
+		
+		Mutator<String> m = HFactory.createMutator(keyspace, serializer);
+		for (Map.Entry<String, String> keyValue : keyValues.entrySet()) {
+			m.addInsertion(keyValue.getKey(), columnFamilyName,
+					createColumn(columnName, keyValue.getValue(), keyspace.createClock(), serializer, serializer));
+		}
+		
+		try {
+			m.execute();
+		} catch (final Exception e) {
+			throw new CassandraException(e);
+		}
 	}
 
-	private Column toColumn(final Entry<String, byte[]> property, final long timestamp) {
-		return new Column(typeConverter.stringToBytes(property.getKey()), property.getValue(), timestamp);
-	}
+//	private Column toColumn(final Entry<String, byte[]> property, final long timestamp) {
+//		return new Column(typeConverter.stringToBytes(property.getKey()), property.getValue(), timestamp);
+//	}
     
+	/*
 	public void delete(final T object) {
 		delete(getKeyFrom(object));
 	}
@@ -373,5 +480,6 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> {
 				columns, typeConverter.toByteArrayFunction())));
 		return predicate;
 	}
+	*/
 
 }
