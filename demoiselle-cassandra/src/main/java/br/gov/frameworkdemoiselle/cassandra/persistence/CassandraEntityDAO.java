@@ -1,7 +1,5 @@
 package br.gov.frameworkdemoiselle.cassandra.persistence;
 
-import static me.prettyprint.hector.api.factory.HFactory.getOrCreateCluster;
-
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -18,6 +16,8 @@ import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.KeyspaceService;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.ConsistencyLevelPolicy;
+import me.prettyprint.hector.api.Serializer;
+import me.prettyprint.hector.api.beans.HColumn;
 import me.prettyprint.hector.api.exceptions.HectorException;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.mutation.Mutator;
@@ -40,6 +40,7 @@ import br.gov.frameworkdemoiselle.cassandra.internal.EntityDAO;
 import br.gov.frameworkdemoiselle.cassandra.internal.implementation.AbstractCassandraDAO;
 import br.gov.frameworkdemoiselle.cassandra.internal.implementation.MarshalledObject;
 import br.gov.frameworkdemoiselle.cassandra.internal.implementation.TypeConverter;
+import br.gov.frameworkdemoiselle.cassandra.internal.mapping.TypeMapping;
 
 import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableList;
@@ -182,6 +183,53 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> impl
 
 	@Override
 	public void save(final T object) {
+		
+		Object rowKey = null;
+		Map<String, Object> columns = new HashMap<String, Object>();
+		
+		for (PropertyDescriptor d : propertyDescriptors) {
+			if (isReadWrite(d)) {
+				try {
+					final String name = d.getName();
+					final Object value = PropertyUtils.getProperty(object, name);
+					
+					if (isKeyProperty(d)) {
+						rowKey = value;
+					} else if (!isTransient(d)) {
+						columns.put(name, value);
+					}
+				} catch (final NoSuchMethodException e) {
+					throw new CassandraException(e);
+				} catch (final IllegalAccessException e) {
+					throw new CassandraException(e);
+				} catch (final InvocationTargetException e) {
+					throw new CassandraException(e);
+				}
+			}
+		}
+		
+		Mutator<String> m = HFactory.createMutator(keyspace, serializer);
+//		for (Map.Entry<String, Object> value : columns.entrySet()) {
+//			m.addInsertion(rowKey, columnFamilyName,
+//					HFactory.createColumn(value.getKey(), value.getValue(), keyspace.createClock(), serializer, serializer));
+//		}
+		
+//		<N, V> HColumn<N, V> createColumn(N name, V value, long clock,
+//			      Serializer<N> nameSerializer, Serializer<V> valueSerializer) {
+		
+//	  <N, V> Mutator<K> addInsertion(K key, String cf, HColumn<N, V> c);
+
+		
+		try {
+			m.execute();
+		} catch (final Exception e) {
+			throw new CassandraException(e);
+		}
+	}
+
+	/*
+	@Override
+	public void save(final T object) {
 
         final MarshalledObject marshalledObject = MarshalledObject.create();
 
@@ -224,23 +272,22 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> impl
 		final List<Column> columnList = Lists.newLinkedList();
 		final long timestamp = System.currentTimeMillis() * 1000;
 
-//		for (final Map.Entry<String, byte[]> property : marshalledObject.getEntries()) {
-//			columnList.add(toColumn(property, timestamp));
-//		}
+		for (final Map.Entry<String, byte[]> property : marshalledObject.getEntries()) {
+			columnList.add(toColumn(property, timestamp));
+		}
 
-//		final Map<String, List<Column>> columnMap;
-//		final Map<String, List<SuperColumn>> superColumnMap;
+		final Map<String, List<Column>> columnMap;
+		final Map<String, List<SuperColumn>> superColumnMap;
 
-//		if (marshalledObject.isSuperColumnPresent()) {
-//			final SuperColumn superColumn = new SuperColumn(marshalledObject.getSuperColumn(), columnList);
-//			superColumnMap = ImmutableMap.<String, List<SuperColumn>> of(columnFamily, ImmutableList.of(superColumn));
-//			columnMap = null;
-//		} else {
-//			columnMap = ImmutableMap.<String, List<Column>> of(columnFamilyName, columnList);
-//			superColumnMap = null;
-//		}
+		if (marshalledObject.isSuperColumnPresent()) {
+			final SuperColumn superColumn = new SuperColumn(marshalledObject.getSuperColumn(), columnList);
+			superColumnMap = ImmutableMap.<String, List<SuperColumn>> of(columnFamily, ImmutableList.of(superColumn));
+			columnMap = null;
+		} else {
+			columnMap = ImmutableMap.<String, List<Column>> of(columnFamilyName, columnList);
+			superColumnMap = null;
+		}
 
-		/*
 		try {
 			execute(new Command<Void>() {
 
@@ -254,26 +301,12 @@ public abstract class CassandraEntityDAO<T> extends AbstractCassandraDAO<T> impl
 		} catch (final Exception e) {
 			throw new CassandraException(e);
 		}
-		*/
-		
-		Mutator<String> m = HFactory.createMutator(keyspace, serializer);
-		for (Map.Entry<String, String> keyValue : keyValues.entrySet()) {
-			m.addInsertion(keyValue.getKey(), columnFamilyName,
-					createColumn(columnName, keyValue.getValue(), keyspace.createClock(), serializer, serializer));
-		}
-		
-		try {
-			m.execute();
-		} catch (final Exception e) {
-			throw new CassandraException(e);
-		}
 	}
 
-//	private Column toColumn(final Entry<String, byte[]> property, final long timestamp) {
-//		return new Column(typeConverter.stringToBytes(property.getKey()), property.getValue(), timestamp);
-//	}
+	private Column toColumn(final Entry<String, byte[]> property, final long timestamp) {
+		return new Column(typeConverter.stringToBytes(property.getKey()), property.getValue(), timestamp);
+	}
     
-	/*
 	public void delete(final T object) {
 		delete(getKeyFrom(object));
 	}
